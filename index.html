@@ -10,6 +10,8 @@
     <link rel="icon" type="image/png" sizes="32x32" href="https://evictionlab.org/tool/assets/images/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="https://evictionlab.org/tool/assets/images/favicon-16x16.png">
     <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.45.0/mapbox-gl.js'></script>
+    <script src="https://unpkg.com/supercluster@3.0.2/dist/supercluster.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@5/turf.min.js"></script>
     <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.45.0/mapbox-gl.css' rel='stylesheet' />
     <style>
         body { margin:0; padding:0; }
@@ -38,11 +40,29 @@
 
         function featuresOnClick(e) {
             var r = 35;
+            var index = supercluster({ log: true, radius: r, maxZoom: 14 });
+            index.load(map.getSource('media').serialize().data.features);
+            var bounds = map.getBounds();
+            var bb = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()];
             var pt = map.project(e.features[0].geometry.coordinates);
-            var bbox = [[pt.x - r, pt.y - r], [pt.x + r, pt.y + r]];
-            var bboxFeatures = map.queryRenderedFeatures(bbox, { layers: ['hidden_media'] });
-            // Need to filter in a radius as well
-            console.log(bboxFeatures.length);
+            var sw = map.unproject({ x: pt.x - r, y: pt.y - r });
+            var ne = map.unproject({ x: pt.x + r, y: pt.y + r });
+            var bbox = [sw.lng, sw.lat, ne.lng, ne.lat];
+            
+            var clusterCount = e.features[0].properties.point_count;
+            var clusters = index.getClusters(bb, map.getZoom());
+            var sameSizeClusters = clusters.filter(function (c) {
+                return (
+                    c.properties.point_count === clusterCount &&
+                    turf.booleanContains(turf.bboxPolygon(bbox), c)
+                );
+            });
+            if (sameSizeClusters.length === 1) {
+                console.log('worked');
+                console.log(sameSizeClusters[0]);
+            } else {
+                console.log('failed');
+            }
         }
 
         map.on('click', 'clusters', featuresOnClick);
@@ -78,6 +98,7 @@
             var mediaData = { type: 'FeatureCollection', features: items };
             map.getSource('media').setData(mediaData);
             map.getSource('media_hidden').setData(mediaData);
+            // cluster.load(items);
         });
         req.open("GET", SHEET_URL);
         req.send();
