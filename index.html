@@ -40,7 +40,8 @@
 
         function createTooltip(coords, features) {
             var content = features.map(function (f) {
-                return f.properties.outlet + ' | ' + f.properties.title;
+                return '<a target="_blank" href="' + f.properties.link +
+                    '">' + f.properties.outlet + ' | ' + f.properties.title + '</a>';
             }).join('<br/>');
             new mapboxgl.Popup()
                 .setLngLat(coords)
@@ -52,7 +53,6 @@
             if (e.features.length === 0) { return; }
             var coords = e.features[0].geometry.coordinates;
             if (!e.features[0].properties.hasOwnProperty('point_count')) {
-                console.log('not a cluster, feature count: ', e.features.length);
                 createTooltip(coords, e.features);
                 return;
             }
@@ -65,24 +65,20 @@
             var ne = map.unproject({ x: pt.x + r, y: pt.y + r });
             var bbox = [sw.lng, sw.lat, ne.lng, ne.lat];
 
-            var index = supercluster({ log: true, radius: r, maxZoom: 14 });
+            var index = supercluster({ radius: r, maxZoom: 14 });
             index.load(map.getSource('media').serialize().data.features);
             var clusterCount = e.features[0].properties.point_count;
             var clusters = index.getClusters(bb, Math.floor(map.getZoom()));
-            var sameSizeClusters = clusters.filter(function (c) {
+            var matchClusters = clusters.filter(function (c) {
                 return (
                     c.properties.point_count === clusterCount &&
                     turf.booleanContains(turf.bboxPolygon(bbox), c)
                 );
             });
-            if (sameSizeClusters.length === 1) {
-                var clusterId = sameSizeClusters[0].properties.cluster_id;
+            if (matchClusters.length === 1) {
+                var clusterId = matchClusters[0].properties.cluster_id;
                 var clusterFeatures = index.getLeaves(clusterId, 1000);
-                console.log(clusterFeatures);
-                console.log(clusterFeatures.length);
                 createTooltip(coords, clusterFeatures);
-            } else {
-                console.log('failed');
             }
         }
 
