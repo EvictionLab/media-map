@@ -12,6 +12,7 @@
     <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.45.0/mapbox-gl.js'></script>
     <script src="https://unpkg.com/supercluster@3.0.2/dist/supercluster.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@turf/turf@5/turf.min.js"></script>
+    <script type="text/javascript" src="https://pym.nprapps.org/pym.v1.min.js"></script>
     <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.45.0/mapbox-gl.css' rel='stylesheet' />
     <style>
         body { margin:0; padding:0; }
@@ -26,7 +27,7 @@
 <body>
     <div id='map'></div>
     <script>
-        var SHEET_URL = 'https://spreadsheets.google.com/feeds/list/1fIHfkpG134ax5neHQGfipUrWbzPd-EAlVVlYqm4i9iE/default/public/values?alt=json'
+        var SHEET_URL = 'https://spreadsheets.google.com/feeds/list/1fIHfkpG134ax5neHQGfipUrWbzPd-EAlVVlYqm4i9iE/1/public/values?alt=json'
         mapboxgl.accessToken = 'pk.eyJ1IjoiZXZpY3Rpb24tbGFiIiwiYSI6ImNqY20zamVpcTBwb3gzM28yb292YzM3dXoifQ.uKgAjsMd4qkJNqEtr3XyPQ';
         var map = new mapboxgl.Map({
             container: 'map',
@@ -119,6 +120,8 @@
         });
         req.open("GET", SHEET_URL);
         req.send();
+
+        var pymChild = new pym.Child();
     </script>
 </body>
 </html>
