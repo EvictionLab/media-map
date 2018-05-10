@@ -29,7 +29,6 @@
             center: [-103.59179687498357, 40.66995747013945],
             zoom: 3
         });
-        // var tooltip;
 
         function cursorPointerOn() { map.getCanvas().style.cursor = 'pointer'; };
         function cursorPointerOff() { map.getCanvas().style.cursor = ''; }
@@ -58,8 +57,6 @@
                 return;
             }
             var r = 35;
-            var index = supercluster({ radius: r, maxZoom: 14 });
-            index.load(map.getSource('media').serialize().data.features);
 
             var bounds = map.getBounds();
             var bb = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()];
@@ -67,9 +64,11 @@
             var sw = map.unproject({ x: pt.x - r, y: pt.y - r });
             var ne = map.unproject({ x: pt.x + r, y: pt.y + r });
             var bbox = [sw.lng, sw.lat, ne.lng, ne.lat];
-            
+
+            var index = supercluster({ log: true, radius: r, maxZoom: 14 });
+            index.load(map.getSource('media').serialize().data.features);
             var clusterCount = e.features[0].properties.point_count;
-            var clusters = index.getClusters(bb, map.getZoom());
+            var clusters = index.getClusters(bb, Math.floor(map.getZoom()));
             var sameSizeClusters = clusters.filter(function (c) {
                 return (
                     c.properties.point_count === clusterCount &&
