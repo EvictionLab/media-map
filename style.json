@@ -205,15 +205,15 @@
         "id": "clusters",
         "type": "circle",
         "source": "media",
-        "filter": ["has", "point_count"],
         "paint": {
             "circle-color": [
-                "interpolate", ["linear"], ["get", "point_count"],
-                2, "rgba(133, 157, 204, 0.8)",
+                "interpolate", ["linear"], ["case", ["has", "point_count"], ["get", "point_count"], 1],
+                1, "rgba(133, 157, 204, 0.8)",
                 15, "rgba(64, 71, 124, 0.9)"
             ],
             "circle-radius": [
-                "interpolate", ["linear"], ["get", "point_count"],
+                "interpolate", ["linear"], ["case", ["has", "point_count"], ["get", "point_count"], 1],
+                1, 5,
                 2, 10,
                 20, 50
             ],
@@ -230,18 +230,6 @@
             "text-field": "{point_count_abbreviated}",
             "text-font": ["Lato+Bold"],
             "text-size": 11
-        }
-    },
-    {
-        "id": "unclustered_points",
-        "type": "circle",
-        "source": "media",
-        "filter": ["!has", "point_count"],
-        "paint": {
-            "circle-color": "rgba(133, 157, 204, 0.8)",
-            "circle-radius": 5,
-            "circle-stroke-width": 1,
-            "circle-stroke-color": "#fff"
         }
     },
     {

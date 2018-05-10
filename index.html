@@ -35,13 +35,12 @@
             zoom: 3
         });
 
-        function cursorPointerOn() { map.getCanvas().style.cursor = 'pointer'; };
-        function cursorPointerOff() { map.getCanvas().style.cursor = ''; }
-
-        map.on('mouseenter', 'clusters', cursorPointerOn);
-        map.on('mouseenter', 'unclustered_points', cursorPointerOn);
-        map.on('mouseleave', 'clusters', cursorPointerOff);
-        map.on('mouseleave', 'unclustered_points', cursorPointerOff);
+        map.on('mouseenter', 'clusters', function() {
+            map.getCanvas().style.cursor = 'pointer';
+        });
+        map.on('mouseleave', 'clusters', function() {
+            map.getCanvas().style.cursor = '';
+        });
 
         function createTooltip(coords, features) {
             var content = features.map(function (f) {
@@ -86,9 +85,7 @@
                 createTooltip(coords, clusterFeatures);
             }
         }
-
         map.on('click', 'clusters', featuresOnClick);
-        map.on('click', 'unclustered_points', featuresOnClick);
 
         var req = new XMLHttpRequest();
         req.addEventListener("load", function () {
