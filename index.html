@@ -121,7 +121,7 @@
         req.open("GET", SHEET_URL);
         req.send();
 
-        var pymChild = new pym.Child();
+        var pymChild = new pym.Child({ polling: 1000 });
     </script>
 </body>
 </html>
