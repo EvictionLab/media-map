@@ -29,6 +29,7 @@
             center: [-103.59179687498357, 40.66995747013945],
             zoom: 3
         });
+        // var tooltip;
 
         function cursorPointerOn() { map.getCanvas().style.cursor = 'pointer'; };
         function cursorPointerOff() { map.getCanvas().style.cursor = ''; }
@@ -38,13 +39,31 @@
         map.on('mouseleave', 'clusters', cursorPointerOff);
         map.on('mouseleave', 'unclustered_points', cursorPointerOff);
 
+        function createTooltip(coords, features) {
+            var content = features.map(function (f) {
+                return f.properties.outlet + ' | ' + f.properties.title;
+            }).join('<br/>');
+            new mapboxgl.Popup()
+                .setLngLat(coords)
+                .setHTML(content)
+                .addTo(map);
+        }
+
         function featuresOnClick(e) {
+            if (e.features.length === 0) { return; }
+            var coords = e.features[0].geometry.coordinates;
+            if (!e.features[0].properties.hasOwnProperty('point_count')) {
+                console.log('not a cluster, feature count: ', e.features.length);
+                createTooltip(coords, e.features);
+                return;
+            }
             var r = 35;
-            var index = supercluster({ log: true, radius: r, maxZoom: 14 });
+            var index = supercluster({ radius: r, maxZoom: 14 });
             index.load(map.getSource('media').serialize().data.features);
+
             var bounds = map.getBounds();
             var bb = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()];
-            var pt = map.project(e.features[0].geometry.coordinates);
+            var pt = map.project(coords);
             var sw = map.unproject({ x: pt.x - r, y: pt.y - r });
             var ne = map.unproject({ x: pt.x + r, y: pt.y + r });
             var bbox = [sw.lng, sw.lat, ne.lng, ne.lat];
@@ -58,8 +77,11 @@
                 );
             });
             if (sameSizeClusters.length === 1) {
-                console.log('worked');
-                console.log(sameSizeClusters[0]);
+                var clusterId = sameSizeClusters[0].properties.cluster_id;
+                var clusterFeatures = index.getLeaves(clusterId, 1000);
+                console.log(clusterFeatures);
+                console.log(clusterFeatures.length);
+                createTooltip(coords, clusterFeatures);
             } else {
                 console.log('failed');
             }
@@ -97,8 +119,6 @@
             });
             var mediaData = { type: 'FeatureCollection', features: items };
             map.getSource('media').setData(mediaData);
-            map.getSource('media_hidden').setData(mediaData);
-            // cluster.load(items);
         });
         req.open("GET", SHEET_URL);
         req.send();

@@ -33,13 +33,6 @@
         "cluster": true,
         "clusterMaxZoom": 14,
         "clusterRadius": 35
-    },
-    "media_hidden": {
-        "type": "geojson",
-        "data": {
-            "type": "FeatureCollection",
-            "features": []
-        }
     }
   },
   "glyphs": "https://openmaptiles.evictionlab.org/fonts/{fontstack}/{range}.pbf",
@@ -216,14 +209,16 @@
         "paint": {
             "circle-color": [
                 "interpolate", ["linear"], ["get", "point_count"],
-                2, "rgba(238, 226, 239, 0.7)",
+                2, "rgba(133, 157, 204, 0.8)",
                 15, "rgba(64, 71, 124, 0.9)"
             ],
             "circle-radius": [
                 "interpolate", ["linear"], ["get", "point_count"],
                 2, 10,
                 20, 50
-            ]
+            ],
+            "circle-stroke-width": 1,
+            "circle-stroke-color": "#fff"
         }
     },
     {
@@ -238,21 +233,13 @@
         }
     },
     {
-        "id": "hidden_media",
-        "type": "circle",
-        "source": "media_hidden",
-        "paint": {
-            "circle-radius": 0
-        }
-    },
-    {
         "id": "unclustered_points",
         "type": "circle",
         "source": "media",
         "filter": ["!has", "point_count"],
         "paint": {
             "circle-color": "rgba(133, 157, 204, 0.8)",
-            "circle-radius": 3,
+            "circle-radius": 5,
             "circle-stroke-width": 1,
             "circle-stroke-color": "#fff"
         }
