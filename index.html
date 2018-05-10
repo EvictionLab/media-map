@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='utf-8' />
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>Eviction Lab | Media Map</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1' />
+    <link rel="manifest" href="https://evictionlab.org/tool/assets/manifest.json">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://evictionlab.org/tool/assets/images/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://evictionlab.org/tool/assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="https://evictionlab.org/tool/assets/images/favicon-16x16.png">
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.45.0/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.45.0/mapbox-gl.css' rel='stylesheet' />
+    <style>
+        body { margin:0; padding:0; }
+        #map { position:absolute; top:0; bottom:0; width:100%; }
+    </style>
+</head>
+<body>
+    <div id='map'></div>
+    <script>
+        var SHEET_URL = 'https://spreadsheets.google.com/feeds/list/1fIHfkpG134ax5neHQGfipUrWbzPd-EAlVVlYqm4i9iE/default/public/values?alt=json'
+        mapboxgl.accessToken = 'pk.eyJ1IjoiZXZpY3Rpb24tbGFiIiwiYSI6ImNqY20zamVpcTBwb3gzM28yb292YzM3dXoifQ.uKgAjsMd4qkJNqEtr3XyPQ';
+        var map = new mapboxgl.Map({
+            container: 'map',
+            style: './style.json',
+            center: [-103.59179687498357, 40.66995747013945],
+            zoom: 3
+        });
+
+        function cursorPointerOn() { map.getCanvas().style.cursor = 'pointer'; };
+        function cursorPointerOff() { map.getCanvas().style.cursor = ''; }
+
+        map.on('mouseenter', 'clusters', cursorPointerOn);
+        map.on('mouseenter', 'unclustered_points', cursorPointerOn);
+        map.on('mouseleave', 'clusters', cursorPointerOff);
+        map.on('mouseleave', 'unclustered_points', cursorPointerOff);
+
+        function featuresOnClick(e) {
+            var r = 35;
+            var pt = map.project(e.features[0].geometry.coordinates);
+            var bbox = [[pt.x - r, pt.y - r], [pt.x + r, pt.y + r]];
+            var bboxFeatures = map.queryRenderedFeatures(bbox, { layers: ['hidden_media'] });
+            // Need to filter in a radius as well
+            console.log(bboxFeatures.length);
+        }
+
+        map.on('click', 'clusters', featuresOnClick);
+        map.on('click', 'unclustered_points', featuresOnClick);
+
+        var req = new XMLHttpRequest();
+        req.addEventListener("load", function () {
+            var rows = JSON.parse(this.responseText).feed.entry;
+            var properties = Object.keys(rows[0])
+                .filter(function (p) { return p.startsWith("gsx$"); })
+                .map(function (p) { return p.substr(4); });
+            
+            var items = rows.map(function (r) {
+                var row = {};
+                properties.forEach(function (p) {
+                    row[p] = r["gsx$" + p].$t === "" ? null : r["gsx$" + p].$t;
+                    if (['latitude', 'longitude'].indexOf(p) !== -1) {
+                        row[p] = +row[p];
+                    }
+                    if (row[p] === null) {
+                        row[p] = '';
+                    }
+                });
+                return {
+                    type: 'Feature',
+                    geometry: {
+                        type: 'Point',
+                        coordinates: [row.longitude, row.latitude]
+                    },
+                    properties: row
+                };
+            });
+            var mediaData = { type: 'FeatureCollection', features: items };
+            map.getSource('media').setData(mediaData);
+            map.getSource('media_hidden').setData(mediaData);
+        });
+        req.open("GET", SHEET_URL);
+        req.send();
+    </script>
+</body>
+</html>
