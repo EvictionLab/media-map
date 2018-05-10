@@ -35,6 +35,10 @@
             center: [-103.59179687498357, 40.66995747013945],
             zoom: 3
         });
+        var pymChild = new pym.Child();
+        map.on('loaded', function() {
+            pymChild.sendHeight();
+        });
 
         map.on('mouseenter', 'clusters', function() {
             map.getCanvas().style.cursor = 'pointer';
@@ -120,8 +124,6 @@
         });
         req.open("GET", SHEET_URL);
         req.send();
-
-        var pymChild = new pym.Child({ polling: 1000 });
     </script>
 </body>
 </html>
