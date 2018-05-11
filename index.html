@@ -14,6 +14,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@turf/turf@5/turf.min.js"></script>
     <script type="text/javascript" src="https://pym.nprapps.org/pym.v1.min.js"></script>
     <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.45.0/mapbox-gl.css' rel='stylesheet' />
+    <link href='https://d15y7nbot0snb4.cloudfront.net/fonts/641838/721A2AA74EF28AABC.css' rel='stylesheet' />
+    <link href='https://evictionlab.org/css/lib.min.css' rel='stylesheet' />
+    <link href='https://evictionlab.org/css/main-sass.css' rel='stylesheet' />
     <style>
         body { margin:0; padding:0; min-height: 500px; }
         #map { position:absolute; top:0; bottom:0; width:100%; }
@@ -21,6 +24,18 @@
             max-width: 350px;
             max-height: 250px;
             overflow-y: scroll;
+            margin-bottom: 0;
+            padding: 24px;
+        }
+        .mapboxgl-popup-content p {
+            font-family: Akkurat-Regular,sans-serif;
+            font-size: 14px;
+            font-weight: 400;
+            letter-spacing: 0;
+            margin-bottom: 8px;
+        }
+        .mapboxgl-popup-content p:last-child {
+            margin-bottom: 16px;
         }
     </style>
 </head>
@@ -48,14 +63,17 @@
         });
 
         function createTooltip(coords, features) {
-            var content = features.map(function (f) {
-                return '<a target="_blank" href="' + f.properties.link +
-                    '">' + f.properties.outlet + ' | ' + f.properties.title + '</a>';
-            }).join('<br/>');
+            var content = document.createElement('div');
+            content.innerHTML = features.map(function (f) {
+                return '<p>' + f.properties.outlet + ' | <a target="_blank" href="' +
+                    f.properties.link + '">' + f.properties.title + '</a></p>';
+            }).join('');
             new mapboxgl.Popup()
                 .setLngLat(coords)
-                .setHTML(content)
+                .setDOMContent(content)
                 .addTo(map);
+            content.parentNode.className += ' modal-content modal-header';
+            document.querySelector('.mapboxgl-popup-close-button').className += ' close';
         }
 
         function featuresOnClick(e) {
