@@ -230,6 +230,9 @@
             "text-field": "{point_count_abbreviated}",
             "text-font": ["Lato+Bold"],
             "text-size": 11
+        },
+        "paint": {
+          "text-color": "rgb(255,255,255)"
         }
     },
     {
