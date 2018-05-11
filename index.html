@@ -14,7 +14,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@turf/turf@5/turf.min.js"></script>
     <script type="text/javascript" src="https://pym.nprapps.org/pym.v1.min.js"></script>
     <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.45.0/mapbox-gl.css' rel='stylesheet' />
-    <link href='https://d15y7nbot0snb4.cloudfront.net/fonts/641838/721A2AA74EF28AABC.css' rel='stylesheet' />
     <link href='https://evictionlab.org/css/lib.min.css' rel='stylesheet' />
     <link href='https://evictionlab.org/css/main-sass.css' rel='stylesheet' />
     <style>
@@ -27,12 +26,22 @@
             margin-bottom: 0;
             padding: 24px;
         }
+        .mapboxgl-popup-close-button.close {
+            padding-top: 8px;
+        }
+        .mapboxgl-popup-close-button:hover {
+            background-color: transparent;
+        }
         .mapboxgl-popup-content p {
             font-family: Akkurat-Regular,sans-serif;
             font-size: 14px;
             font-weight: 400;
             letter-spacing: 0;
             margin-bottom: 8px;
+        }
+        .mapboxgl-popup-content a {
+            color: #e24000;
+            text-decoration: none;
         }
         .mapboxgl-popup-content p:last-child {
             margin-bottom: 16px;
@@ -65,7 +74,7 @@
         function createTooltip(coords, features) {
             var content = document.createElement('div');
             content.innerHTML = features.map(function (f) {
-                return '<p>' + f.properties.outlet + ' | <a target="_blank" href="' +
+                return '<p>' + f.properties.outlet + ' <a target="_blank" href="' +
                     f.properties.link + '">' + f.properties.title + '</a></p>';
             }).join('');
             new mapboxgl.Popup()
