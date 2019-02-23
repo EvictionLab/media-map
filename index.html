@@ -267,6 +267,8 @@
         var filter_start_date = null;
         var filter_end_date = null;
 
+        var mediaData = {};
+
         map.on('loaded', function() {
             pymChild.sendHeight();
         });
@@ -353,7 +355,8 @@
                     properties: row
                 };
             });
-            var mediaData = { type: 'FeatureCollection', features: items };
+            mediaData = { type: 'FeatureCollection', features: items };
+            console.log(mediaData);
             map.getSource('media').setData(mediaData);
         });
         req.open("GET", SHEET_URL);
@@ -402,7 +405,19 @@
                 var end = new Date(year, month, 0);
                 console.log(end);
                 filter_end_date = end;
-                // Call map loading again.
+                // Filter mediaData.
+                // var newData = mediaData.each(
+                //
+                // );
+                var newData = { type: 'FeatureCollection',
+                    features: (mediaData.features).filter(function(obj) {
+                        var pubDate = new Date(obj.properties.date);
+                        return (pubDate >=  filter_start_date) && (pubDate <= filter_end_date);
+                    })
+                };
+                console.log(newData);
+                // Reload the map.
+                map.getSource('media').setData(newData);
             });
         });
     </script>
