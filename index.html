@@ -150,10 +150,22 @@
         .column.to {
             padding: 1rem 0;
         }
-        /* .filters-parent .row .column .date {
-            padding: 1.75rem;
-            flex: 0 0 auto;
-        } */
+
+        .invalid-warning {
+            line-height: 40px;
+            margin: 1rem 12px;
+            font-family: Akkurat-Regular,sans-serif;
+            font-size: 16px;
+            font-weight: 400;
+            letter-spacing: .7px;
+            color: #e24000;
+            position: absolute;
+            right: 1rem;
+            display: none;
+        }
+        .select-invalid {
+            border: 1px solid red !important;
+        }
         select {
            -webkit-appearance: none;
            -moz-appearance: none;
@@ -170,23 +182,14 @@
             color: #e24000;
             margin-top: 1rem;
         }
-        /* option.placeholder::after {
-            content: "v"
-        } */
-
     </style>
 </head>
 <body>
     <div id="filters-parent" class="filters-parent">
         <div class="filters-panel show row">
-            <!-- <div class="column date">
-                <span class="date-filters-title">Range</span>
-            </div> -->
             <div class="start-controls column">
-                <!-- <span class="date-filter-start-title">Start</span> -->
                 <!-- Start month -->
-                <!-- <label for="start_month_select">Month</label> -->
-                <select id="start_month_select">
+                <select id="start_month_select" class="month">
                     <option value="0">01</option>
                     <option value="1">02</option>
                     <option value="2">03</option>
@@ -201,10 +204,10 @@
                     <option value="11">12</option>
                 </select>
                 <!-- Start year -->
-                <!-- <label for="start_year_select">Year</label> -->
-                <select id="start_year_select">
+                <select id="start_year_select" class="year">
                     <option value="2018">2018</option>
                     <option value="2019">2019</option>
+                    <!-- <option value="2020">2020</option> -->
                 </select>
             </div>
             <div class="column to">
@@ -214,7 +217,7 @@
                 <!-- <span class="date-filter-end-title">End</span> -->
                 <!-- Start month -->
                 <!-- <label for="end_month_select" aria-label="Select end month">Month</label> -->
-                <select id="end_month_select">
+                <select id="end_month_select" class="month">
                     <option value="0">01</option>
                     <option value="1">02</option>
                     <option value="2">03</option>
@@ -229,17 +232,18 @@
                     <option value="11">12</option>
                 </select>
                 <!-- Start year -->
-                <!-- <label for="end_year_select" aria-label="Select end year">Year</label> -->
-                <select id="end_year_select">
+                <select id="end_year_select" class="year">
                     <option value="2018">2018</option>
                     <option value="2019">2019</option>
+                    <!-- <option value="2020">2020</option> -->
                 </select>
             </div>
             <div class="go-button column">
                 <button id="filter_bydate">Go</button>
             </div>
+            <div id="invalid" class="invalid-warning">Invalid date selection</div>
         </div>
-        <div class="filters-button">
+        <div class="column filters-button">
             <button id="filters_button">
                 FILTER RESULTS
                 <i class="fa fa-chevron-down show"></i>
@@ -356,12 +360,11 @@
                 };
             });
             mediaData = { type: 'FeatureCollection', features: items };
-            console.log(mediaData);
+            // console.log(mediaData);
             map.getSource('media').setData(mediaData);
         });
         req.open("GET", SHEET_URL);
         req.send();
-
 
         jQuery(document).ready(function() {
             // console.log( "ready!" );
@@ -390,7 +393,7 @@
                     $('#start_year_select').val(),
                     $('#start_month_select').val()
                 );
-                console.log(start);
+                // console.log(start);
                 filter_start_date = start;
                 // End, have to take the last day of the month,
                 // which we will get by stepping back from the subsequent month.
@@ -403,22 +406,100 @@
                     month = month + 1;
                 }
                 var end = new Date(year, month, 0);
-                console.log(end);
+                // console.log(end);
                 filter_end_date = end;
-                // Filter mediaData.
-                // var newData = mediaData.each(
-                //
-                // );
                 var newData = { type: 'FeatureCollection',
                     features: (mediaData.features).filter(function(obj) {
                         var pubDate = new Date(obj.properties.date);
                         return (pubDate >=  filter_start_date) && (pubDate <= filter_end_date);
                     })
                 };
-                console.log(newData);
+                // console.log(newData);
                 // Reload the map.
                 map.getSource('media').setData(newData);
             });
+
+            /**
+             * Validate the end range, removing months beyond the current
+             * month if the selected year is the current year.
+             * @return null
+             */
+            function validateEndRange(el) {
+                // console.log('validateEndRange');
+                // Get element and sibling
+                var $el = $(el);
+                var $month = $el.prev('.month');
+                // Get current datetime
+                var now = new Date();
+                var thisMonth = now.getMonth();
+                var thisYear = now.getFullYear();
+                // Minimal max month validation against current year
+                if ($el.val() == thisYear) {
+                    // console.log('this year is selected');
+                    $month.find('option').each(function() {
+                        if (Number(this.value) > thisMonth) {
+                            // console.log('number is greater than present month');
+                            $(this).attr('disabled', 'disabled');
+                        } else {
+                            $(this).removeAttr('disabled');
+                            $month.val(thisMonth);
+                        }
+                    });
+                } else {
+                    $month.find('option').each(function() {
+                        $(this).removeAttr('disabled');
+                    });
+                }
+            }
+            $('#end_year_select, #start_year_select').on('change', function(e) {
+                validateEndRange(e.target);
+            });
+            validateEndRange('#end_year_select');
+            /**
+             * Validate full date range, ensuring that end date selections
+             * are after selected start date.
+             * @return null
+             */
+            function validateFullDateRange() {
+                // console.log('validateFullDateRange()');
+                var start_month = Number($('#start_month_select').val());
+                var start_year = Number($('#start_year_select').val());
+                var end_month = Number($('#end_month_select').val());
+                var end_year = Number($('#end_year_select').val());
+
+                if (end_year <= start_year) {
+                    // console.log('End year less than or equal');
+                    if (end_month < start_month) {
+                        // console.log('invalid, disabling');
+                        // Disable filter button
+                        $('#filter_bydate').prop('disabled', 'disabled');
+                        // Display warning message
+                        $('#invalid').show();
+                        // Add invalid classes
+                        $('#end_year_select, #end_month_select').addClass('select-invalid');
+                    } else {
+                        // console.log('valid, enabling');
+                        // Enable filter button
+                        $('#filter_bydate').prop('disabled', false);
+                        // Display warning message
+                        $('#invalid').hide();
+                        // Add invalid classes
+                        $('#end_year_select, #end_month_select').removeClass('select-invalid');
+                    }
+                } else {
+                    // console.log('valid, enabling');
+                    // Enable filter button
+                    $('#filter_bydate').prop('disabled', false);
+                    // Display warning message
+                    $('#invalid').hide();
+                    // Add invalid classes
+                    $('#end_year_select, #end_month_select').removeClass('select-invalid');
+                }
+            }
+            $('#start_month_select, #start_year_select, #end_month_select, #end_year_select').on('change', function() {
+                validateFullDateRange();
+            });
+            validateEndRange();
         });
     </script>
 </body>
