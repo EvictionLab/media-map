@@ -73,6 +73,7 @@
         }
         .filters-button {
             float: right;
+            margin-top: -1px;
         }
         #filters_button,
         #filter_bydate,
@@ -150,21 +151,8 @@
         .column.to {
             padding: 1rem 0;
         }
-
-        .invalid-warning {
-            line-height: 40px;
-            margin: 1rem 12px;
-            font-family: Akkurat-Regular,sans-serif;
-            font-size: 16px;
-            font-weight: 400;
-            letter-spacing: .7px;
-            color: #e24000;
-            position: absolute;
-            right: 1rem;
-            display: none;
-        }
-        .select-invalid {
-            border: 1px solid #e24000 !important;
+        select.select-invalid {
+            border: 1px solid #909090 !important;
         }
         select {
            -webkit-appearance: none;
@@ -181,9 +169,52 @@
         #filter_bydate {
             color: #e24000;
             margin-top: 1rem;
+            min-width: 250px;
+            text-align: center;
         }
         #filter_bydate:disabled {
-            color: #909090;
+            color: #909090 !important;
+        }
+        @media (max-width: 991px) {
+            .filters-parent {
+                top: -200px;
+            }
+            .filters-panel {
+                height: 200px;
+            }
+            .column {
+                text-align: center;
+                width: 100%;
+                padding-top: 0;
+                padding-bottom: 0;
+            }
+            .column.start-controls,
+            .column.end-controls {
+                height: 28px;
+            }
+            .column.to {
+                height: 20px;
+            }
+            #filter_bydate, #start_month_select, #start_year_select, #end_month_select, #end_year_select {
+                padding-top: 0;
+                padding-bottom: 0;
+                margin-bottom: 0;
+            }
+            select {
+                margin-bottom: 0;
+            }
+            .filters-parent .row .column.date,
+            .filters-parent .row .column.start-controls,
+            .filters-parent .row .column.end-controls,
+            .column.to  {
+                padding: 0;
+            }
+            .filters-parent .row .column.start-controls {
+                margin-top: 1rem;
+            }
+            .filters-parent .row .column.go-button {
+                margin-top: .5rem;
+            }
         }
     </style>
 </head>
@@ -244,9 +275,9 @@
             <div class="go-button column">
                 <button id="filter_bydate">Go</button>
             </div>
-            <div id="invalid" class="invalid-warning">Invalid date selection</div>
+            <!-- <div id="invalid" class="invalid-warning">Invalid date selection</div> -->
         </div>
-        <div class="column filters-button">
+        <div class="filters-button">
             <button id="filters_button">
                 FILTER RESULTS
                 <i class="fa fa-chevron-down show"></i>
@@ -470,31 +501,38 @@
                 var end_month = Number($('#end_month_select').val());
                 var end_year = Number($('#end_year_select').val());
 
-                if (end_year <= start_year) {
-                    // console.log('End year less than or equal');
+                if (end_year === start_year) {
+                    // console.log('End year equal to start year');
+                    // When end year same as start year,
+                    // if end month less than start month,
+                    // validation error. Else proceed.
                     if (end_month < start_month) {
                         // console.log('invalid, disabling');
                         // Disable filter button
-                        $('#filter_bydate').prop('disabled', 'disabled');
-                        // Display warning message
-                        $('#invalid').show();
+                        $('#filter_bydate').prop('disabled', 'disabled').text('Invalid date selection');
                         // Add invalid classes
                         $('#end_year_select, #end_month_select').addClass('select-invalid');
                     } else {
                         // console.log('valid, enabling');
                         // Enable filter button
-                        $('#filter_bydate').prop('disabled', false);
-                        // Display warning message
-                        $('#invalid').hide();
+                        $('#filter_bydate').prop('disabled', false).text('Go');
                         // Add invalid classes
                         $('#end_year_select, #end_month_select').removeClass('select-invalid');
                     }
+                } else if (end_year < start_year) {
+                    // When end year less than start year,
+                    // validation error.
+                    // console.log('End year less than start year');
+                    // Disable filter button
+                    $('#filter_bydate').prop('disabled', 'disabled').text('Invalid date selection');
+                    // Add invalid classes
+                    $('#end_year_select, #end_month_select').addClass('select-invalid');
                 } else {
+                    // Else remove any preceding validation
+                    // error warnings.
                     // console.log('valid, enabling');
                     // Enable filter button
-                    $('#filter_bydate').prop('disabled', false);
-                    // Display warning message
-                    $('#invalid').hide();
+                    $('#filter_bydate').prop('disabled', false).text('Go');
                     // Add invalid classes
                     $('#end_year_select, #end_month_select').removeClass('select-invalid');
                 }
