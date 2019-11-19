@@ -33,6 +33,16 @@
         "cluster": true,
         "clusterMaxZoom": 14,
         "clusterRadius": 35
+    },
+    "lmsmedia": {
+        "type": "geojson",
+        "data": {
+            "type" : "FeatureCollection",
+            "features": []
+        },
+        "cluster": true,
+        "clusterMaxZoom": 14,
+        "clusterRadius": 35
     }
   },
   "glyphs": "https://openmaptiles.evictionlab.org/fonts/{fontstack}/{range}.pbf",
@@ -229,6 +239,40 @@
         "layout": {
             "text-field": "{point_count_abbreviated}",
             "text-font": ["Lato+Bold"],
+            "text-size": 11
+        },
+        "paint": {
+          "text-color": "rgb(255,255,255)"
+        }
+    },
+    {
+        "id": "lmsclusters",
+        "type": "circle",
+        "source": "lmsmedia",
+        "paint": {
+            "circle-color": [
+                "interpolate", ["linear"], ["case", ["has", "point_count"], ["get", "point_count"], 1],
+                1, "rgba(129,210,151,0.71)",
+                15, "rgba(129,210,151,0.71)"
+            ],
+            "circle-radius": [
+                "interpolate", ["linear"], ["case", ["has", "point_count"], ["get", "point_count"], 1],
+                1, 5,
+                2, 10,
+                20, 50
+            ],
+            "circle-stroke-width": 1,
+            "circle-stroke-color": "#56C38C"
+        }
+    },
+    {
+        "id": "lmscluster_count",
+        "type": "symbol",
+        "source": "lmsmedia",
+        "filter": ["has", "point_count"],
+        "layout": {
+            "text-field": "{point_count_abbreviated}",
+            "text-font": ["Lato Bold"],
             "text-size": 11
         },
         "paint": {

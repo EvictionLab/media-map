@@ -291,7 +291,20 @@
         integrity="sha256-3edrmyuQ0w65f8gfBsqowzjJe2iM6n0nKciPUp8y+7E="
         crossorigin="anonymous"></script>
     <script>
+        /**
+         * startsWith polyfill
+         */
+        if (!String.prototype.startsWith) {
+            Object.defineProperty(String.prototype, 'startsWith', {
+                value: function(search, rawPos) {
+                    var pos = rawPos > 0 ? rawPos|0 : 0;
+                    return this.substring(pos, pos + search.length) === search;
+                }
+            });
+        }
+
         var SHEET_URL = 'https://spreadsheets.google.com/feeds/list/1fIHfkpG134ax5neHQGfipUrWbzPd-EAlVVlYqm4i9iE/1/public/values?alt=json'
+        var LMS_SHEET_URL = 'https://spreadsheets.google.com/feeds/list/1fIHfkpG134ax5neHQGfipUrWbzPd-EAlVVlYqm4i9iE/3/public/values?alt=json'
         mapboxgl.accessToken = 'pk.eyJ1IjoiZXZpY3Rpb24tbGFiIiwiYSI6ImNqY20zamVpcTBwb3gzM28yb292YzM3dXoifQ.uKgAjsMd4qkJNqEtr3XyPQ';
         var map = new mapboxgl.Map({
             container: 'map',
@@ -306,6 +319,7 @@
         var filter_end_date = null;
 
         var mediaData = {};
+        var lmsmediaData = {};
 
         map.on('loaded', function() {
             pymChild.sendHeight();
@@ -317,13 +331,27 @@
         map.on('mouseleave', 'clusters', function() {
             map.getCanvas().style.cursor = '';
         });
+        map.on('mouseenter', 'lmsclusters', function() {
+            map.getCanvas().style.cursor = 'pointer';
+        });
+        map.on('mouseleave', 'lmsclusters', function() {
+            map.getCanvas().style.cursor = '';
+        });
 
         function createTooltip(coords, features) {
             var content = document.createElement('div');
-            content.innerHTML = features.map(function (f) {
+            if (features[0].properties.lmsreferrerlinknotfordisplay) {
+                // LMS tool tip
+                content.innerHTML = features.map(function (f) {
+                  return ("<p class='lms-modal'><a target='_blank' href=" + f.properties.institutionwebsite + ">" + f.properties.institution + "</a></p><p class='lms-modal'>" + f.properties.notesdisplayed +"</p>")
+                }).join('');
+            } else {
+                // Media Coverage tool tip
+                content.innerHTML = features.map(function (f) {
                 return '<p>' + f.properties.outlet + ' <a target="_blank" href="' +
                     f.properties.link + '">' + f.properties.title + '</a></p>';
-            }).join('');
+                }).join('');
+            }
             new mapboxgl.Popup()
                 .setLngLat(coords)
                 .setDOMContent(content)
@@ -333,12 +361,19 @@
         }
 
         function featuresOnClick(e) {
+            if (e.originalEvent.cancelBubble) {
+                return;
+            } else { // prevent click event from passing along to other nearby clusters
+                e.originalEvent.cancelBubble = true;
+            }
             if (e.features.length === 0) { return; }
             var coords = e.features[0].geometry.coordinates;
             if (!e.features[0].properties.hasOwnProperty('point_count')) {
+                // single item
                 createTooltip(coords, e.features);
                 return;
             }
+            // multiple items aggregated together into a cluster
             var r = 35;
 
             var bounds = map.getBounds();
@@ -349,7 +384,11 @@
             var bbox = [sw.lng, sw.lat, ne.lng, ne.lat];
 
             var index = supercluster({ radius: r, maxZoom: 14 });
-            index.load(map.getSource('media').serialize().data.features);
+            if (e.features[0].layer.id === 'lmsclusters') {
+                index.load(map.getSource('lmsmedia').serialize().data.features);
+            } else {
+                index.load(map.getSource('media').serialize().data.features);
+            }
             var clusterCount = e.features[0].properties.point_count;
             var clusters = index.getClusters(bb, Math.floor(map.getZoom()));
             var matchClusters = clusters.filter(function (c) {
@@ -365,10 +404,10 @@
             }
         }
         map.on('click', 'clusters', featuresOnClick);
+        map.on('click', 'lmsclusters', featuresOnClick);
 
-        var req = new XMLHttpRequest();
-        req.addEventListener("load", function () {
-            var rows = JSON.parse(this.responseText).feed.entry;
+        let reqHandler = function(source, req) {
+            var rows = JSON.parse(req.responseText).feed.entry;
             var properties = Object.keys(rows[0])
                 .filter(function (p) { return p.startsWith("gsx$"); })
                 .map(function (p) { return p.substr(4); });
@@ -393,12 +432,28 @@
                     properties: row
                 };
             });
-            mediaData = { type: 'FeatureCollection', features: items };
-            // console.log(mediaData);
-            map.getSource('media').setData(mediaData);
-        });
+            if (source === 'media') {
+                mediaData = { type: 'FeatureCollection', features: items };
+            } else {
+                lmsmediaData = { type: 'FeatureCollection', features: items };
+            }
+            let data = source === 'media' ? mediaData : lmsmediaData
+            map.getSource(source).setData(data);
+        }
+
+        // Fetch Local Article Data
+        var req = new XMLHttpRequest();
+        req.addEventListener("load",  function() { reqHandler('media', req) });
         req.open("GET", SHEET_URL);
         req.send();
+
+        // Fetch LMS Data
+        var lmsreq = new XMLHttpRequest();
+        lmsreq.addEventListener("load", function() { reqHandler('lmsmedia', lmsreq) });
+        lmsreq.open("GET", LMS_SHEET_URL);
+        lmsreq.send();
+
+
 
         jQuery(document).ready(function() {
             // console.log( "ready!" );
@@ -442,15 +497,35 @@
                 var end = new Date(year, month, 0);
                 // console.log(end);
                 filter_end_date = end;
-                var newData = { type: 'FeatureCollection',
+                var newMediaData = {
+                    type: 'FeatureCollection',
                     features: (mediaData.features).filter(function(obj) {
                         var pubDate = new Date(obj.properties.date);
                         return (pubDate >=  filter_start_date) && (pubDate <= filter_end_date);
                     })
                 };
-                // console.log(newData);
+                var newlmsMediaData = { type: 'FeatureCollection',
+                    features: (lmsmediaData.features).filter(function(obj) {
+                        let withinDateBounds = false
+                        let pubDateList = Object.keys(obj.properties).map(function(p) {
+                              if (p.slice(0,4) === 'date' && obj.properties[p]) {
+                                // is a "date" property and has a date value input
+                                let formattedDate = obj.properties[p].slice(0,3) + "1/" + obj.properties[p].slice(3)
+                                // adds a day into the date value so javascript can create a Date object
+                                return new Date(formattedDate);
+                              }
+                            })
+                        pubDateList.forEach(function(pubDate) {
+                            if ((pubDate >=  filter_start_date) && (pubDate <= filter_end_date)) {
+                                withinDateBounds = true
+                            }
+                        })
+                        return withinDateBounds;
+                    })
+                };
                 // Reload the map.
-                map.getSource('media').setData(newData);
+                map.getSource('media').setData(newMediaData);
+                map.getSource('lmsmedia').setData(newlmsMediaData);
             });
 
             /**
