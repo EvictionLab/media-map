@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='utf-8' />
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>Eviction Lab | Media Map</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1' />
+    <link rel="manifest" href="https://evictionlab.org/tool/assets/manifest.json">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://evictionlab.org/tool/assets/images/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://evictionlab.org/tool/assets/images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="https://evictionlab.org/tool/assets/images/favicon-16x16.png">
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.45.0/mapbox-gl.js'></script>
+    <script src="https://unpkg.com/supercluster@3.0.2/dist/supercluster.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@5/turf.min.js"></script>
+    <script type="text/javascript" src="https://pym.nprapps.org/pym.v1.min.js"></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.45.0/mapbox-gl.css' rel='stylesheet' />
+    <link href='https://evictionlab.org/css/lib.min.css' rel='stylesheet' />
+    <link href='https://evictionlab.org/css/main-sass.css' rel='stylesheet' />
+    <style>
+        body { margin:0; padding:0; min-height: 500px; }
+        #map { position:absolute; top:0; bottom:0; width:100%; }
+        .mapboxgl-popup-content {
+            max-width: 350px;
+            max-height: 250px;
+            overflow-y: scroll;
+            margin-bottom: 0;
+            padding: 24px;
+        }
+        .mapboxgl-popup-close-button.close {
+            padding-top: 8px;
+        }
+        .mapboxgl-popup-close-button:hover {
+            background-color: transparent;
+        }
+        .mapboxgl-popup-content p {
+            font-family: Akkurat-Regular,sans-serif;
+            font-size: 14px;
+            font-weight: 400;
+            letter-spacing: 0;
+            margin-bottom: 8px;
+        }
+        .mapboxgl-popup-content a {
+            color: #e24000;
+            text-decoration: none;
+        }
+        .mapboxgl-popup-content p:last-child {
+            margin-bottom: 16px;
+        }
+        /* Filtering panel and controls */
+        .filters-parent {
+            position: absolute;
+            top: -60px;
+            z-index: 3000;
+            width: 100%;
+            transition: top 200ms ease-in-out;
+        }
+        .filters-parent.show {
+            top: 0;
+        }
+        .show .filters-panel {
+            box-shadow: 0 3px 6px 0 hsla(0,0%,57%,.23);
+        }
+        .filters-panel {
+            background-color: #fff;
+            width: 100%;
+            height: 60px;
+            font-family: Akkurat-Bold,sans-serif;
+            letter-spacing: .93333333px;
+            font-size: 14px;
+            font-weight: 400;
+            margin-left: 0;
+            margin-right: 0;
+        }
+        .filters-button {
+            float: right;
+            margin-top: -1px;
+        }
+        #filters_button,
+        #filter_bydate,
+        #start_month_select,
+        #start_year_select,
+        #end_month_select,
+        #end_year_select {
+            font-family: Akkurat-Bold,sans-serif;
+            letter-spacing: .93333333px;
+            font-size: 14px;
+            font-weight: 400;
+            background-color: white;
+            height: 40px;
+            border: 1px solid #efefef;
+            box-shadow: none;
+            padding: 8px 24px;
+            position: relative;
+            border: none;
+            border-radius: 0;
+            text-transform: uppercase;
+            /* width: 100%; */
+            text-align: left;
+            color: #050403;
+            box-shadow: 0 3px 6px 0 hsla(0,0%,57%,.23);
+        }
+        #filters_button i {
+            color: #e24000;
+            padding-left: 8px;
+        }
+        #filters_button i.hide {
+            display: none;
+        }
+        .filters-parent.show #filters_button i.hide {
+            display: inline-block;
+        }
+        .filters-parent.show #filters_button i.show {
+            display: none;
+        }
+        .date-filters-title,
+        .date-filter-start-title,
+        .date-filter-end-title {
+            text-transform: uppercase;
+            color: #e24000;
+            display: block;
+        }
+        .date-filter-start-title,
+        .date-filter-end-title {
+            font-size: 16px;
+        }
+        .date-filters-title {
+            transform: rotate(-90deg);
+            transform-origin: right;
+            font-size: 24px;
+        }
+        .filters-parent .row {
+            justify-content: center;
+        }
+        .filters-parent .row .column.date,
+        .filters-parent .row .column.start-controls,
+        .filters-parent .row .column.end-controls {
+            padding: 1rem 1.75rem;
+            flex: 0 0 auto;
+        }
+        .column .text-to {
+            line-height: 40px;
+            margin: 1rem 12px;
+            font-family: Akkurat-Regular,sans-serif;
+            font-size: 16px;
+            font-weight: 400;
+            letter-spacing: .7px;
+            color: #737373;
+            text-transform: uppercase;
+
+        }
+        .column.to {
+            padding: 1rem 0;
+        }
+        select.select-invalid {
+            border: 1px solid #909090 !important;
+        }
+        select {
+           -webkit-appearance: none;
+           -moz-appearance: none;
+           appearance: none;       /* remove default arrow */
+           /*background-image: url(...); */  /* add custom arrow */
+        }
+        #start_month_select,
+        #start_year_select,
+        #end_month_select,
+        #end_year_select {
+            font-family: Akkurat-Regular,sans-serif;
+        }
+        #filter_bydate {
+            color: #e24000;
+            margin-top: 1rem;
+            min-width: 250px;
+            text-align: center;
+        }
+        #filter_bydate:disabled {
+            color: #909090 !important;
+        }
+        @media (max-width: 991px) {
+            .filters-parent {
+                top: -200px;
+            }
+            .filters-panel {
+                height: 200px;
+            }
+            .column {
+                text-align: center;
+                width: 100%;
+                padding-top: 0;
+                padding-bottom: 0;
+            }
+            .column.start-controls,
+            .column.end-controls {
+                height: 28px;
+            }
+            .column.to {
+                height: 20px;
+            }
+            #filter_bydate, #start_month_select, #start_year_select, #end_month_select, #end_year_select {
+                padding-top: 0;
+                padding-bottom: 0;
+                margin-bottom: 0;
+            }
+            select {
+                margin-bottom: 0;
+            }
+            .filters-parent .row .column.date,
+            .filters-parent .row .column.start-controls,
+            .filters-parent .row .column.end-controls,
+            .column.to  {
+                padding: 0;
+            }
+            .filters-parent .row .column.start-controls {
+                margin-top: 1rem;
+            }
+            .filters-parent .row .column.go-button {
+                margin-top: .5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="filters-parent" class="filters-parent">
+        <div class="filters-panel show row">
+            <div class="start-controls column">
+                <!-- Start month -->
+                <select id="start_month_select" class="month">
+                    <option value="0">01</option>
+                    <option value="1">02</option>
+                    <option value="2">03</option>
+                    <option value="3">04</option>
+                    <option value="4">05</option>
+                    <option value="5">06</option>
+                    <option value="6">07</option>
+                    <option value="7">08</option>
+                    <option value="8">09</option>
+                    <option value="9">10</option>
+                    <option value="10">11</option>
+                    <option value="11">12</option>
+                </select>
+                <!-- Start year -->
+                <select id="start_year_select" class="year">
+                    <option value="2018">2018</option>
+                    <option value="2019">2019</option>
+                    <!-- <option value="2020">2020</option> -->
+                </select>
+            </div>
+            <div class="column to">
+                <span class="text-to">to</span>
+            </div>
+            <div class="end-controls column">
+                <!-- <span class="date-filter-end-title">End</span> -->
+                <!-- Start month -->
+                <!-- <label for="end_month_select" aria-label="Select end month">Month</label> -->
+                <select id="end_month_select" class="month">
+                    <option value="0">01</option>
+                    <option value="1">02</option>
+                    <option value="2">03</option>
+                    <option value="3">04</option>
+                    <option value="4">05</option>
+                    <option value="5">06</option>
+                    <option value="6">07</option>
+                    <option value="7">08</option>
+                    <option value="8">09</option>
+                    <option value="9">10</option>
+                    <option value="10">11</option>
+                    <option value="11">12</option>
+                </select>
+                <!-- Start year -->
+                <select id="end_year_select" class="year">
+                    <option value="2018">2018</option>
+                    <option value="2019">2019</option>
+                    <!-- <option value="2020">2020</option> -->
+                </select>
+            </div>
+            <div class="go-button column">
+                <button id="filter_bydate">Go</button>
+            </div>
+            <!-- <div id="invalid" class="invalid-warning">Invalid date selection</div> -->
+        </div>
+        <div class="filters-button">
+            <button id="filters_button">
+                FILTER RESULTS
+                <i class="fa fa-chevron-down show"></i>
+                <i class="fa fa-chevron-up hide"></i>
+            </button>
+        </div>
+    </div>
+    <div id='map'></div>
+    <script
+        src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+        integrity="sha256-3edrmyuQ0w65f8gfBsqowzjJe2iM6n0nKciPUp8y+7E="
+        crossorigin="anonymous"></script>
+    <script>
+        var SHEET_URL = 'https://spreadsheets.google.com/feeds/list/1fIHfkpG134ax5neHQGfipUrWbzPd-EAlVVlYqm4i9iE/1/public/values?alt=json'
+        mapboxgl.accessToken = 'pk.eyJ1IjoiZXZpY3Rpb24tbGFiIiwiYSI6ImNqY20zamVpcTBwb3gzM28yb292YzM3dXoifQ.uKgAjsMd4qkJNqEtr3XyPQ';
+        var map = new mapboxgl.Map({
+            container: 'map',
+            style: './style.json',
+            center: [-103.59179687498357, 40.66995747013945],
+            zoom: 3
+        });
+        var pymChild = new pym.Child();
+
+        // Date filter placeholder vars
+        var filter_start_date = null;
+        var filter_end_date = null;
+
+        var mediaData = {};
+
+        map.on('loaded', function() {
+            pymChild.sendHeight();
+        });
+
+        map.on('mouseenter', 'clusters', function() {
+            map.getCanvas().style.cursor = 'pointer';
+        });
+        map.on('mouseleave', 'clusters', function() {
+            map.getCanvas().style.cursor = '';
+        });
+
+        function createTooltip(coords, features) {
+            var content = document.createElement('div');
+            content.innerHTML = features.map(function (f) {
+                return '<p>' + f.properties.outlet + ' <a target="_blank" href="' +
+                    f.properties.link + '">' + f.properties.title + '</a></p>';
+            }).join('');
+            new mapboxgl.Popup()
+                .setLngLat(coords)
+                .setDOMContent(content)
+                .addTo(map);
+            content.parentNode.className += ' modal-content modal-header';
+            document.querySelector('.mapboxgl-popup-close-button').className += ' close';
+        }
+
+        function featuresOnClick(e) {
+            if (e.features.length === 0) { return; }
+            var coords = e.features[0].geometry.coordinates;
+            if (!e.features[0].properties.hasOwnProperty('point_count')) {
+                createTooltip(coords, e.features);
+                return;
+            }
+            var r = 35;
+
+            var bounds = map.getBounds();
+            var bb = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()];
+            var pt = map.project(coords);
+            var sw = map.unproject({ x: pt.x - r, y: pt.y - r });
+            var ne = map.unproject({ x: pt.x + r, y: pt.y + r });
+            var bbox = [sw.lng, sw.lat, ne.lng, ne.lat];
+
+            var index = supercluster({ radius: r, maxZoom: 14 });
+            index.load(map.getSource('media').serialize().data.features);
+            var clusterCount = e.features[0].properties.point_count;
+            var clusters = index.getClusters(bb, Math.floor(map.getZoom()));
+            var matchClusters = clusters.filter(function (c) {
+                return (
+                    c.properties.point_count === clusterCount &&
+                    turf.booleanContains(turf.bboxPolygon(bbox), c)
+                );
+            });
+            if (matchClusters.length === 1) {
+                var clusterId = matchClusters[0].properties.cluster_id;
+                var clusterFeatures = index.getLeaves(clusterId, 1000);
+                createTooltip(coords, clusterFeatures);
+            }
+        }
+        map.on('click', 'clusters', featuresOnClick);
+
+        var req = new XMLHttpRequest();
+        req.addEventListener("load", function () {
+            var rows = JSON.parse(this.responseText).feed.entry;
+            var properties = Object.keys(rows[0])
+                .filter(function (p) { return p.startsWith("gsx$"); })
+                .map(function (p) { return p.substr(4); });
+
+            var items = rows.map(function (r) {
+                var row = {};
+                properties.forEach(function (p) {
+                    row[p] = r["gsx$" + p].$t === "" ? null : r["gsx$" + p].$t;
+                    if (['latitude', 'longitude'].indexOf(p) !== -1) {
+                        row[p] = +row[p];
+                    }
+                    if (row[p] === null) {
+                        row[p] = '';
+                    }
+                });
+                return {
+                    type: 'Feature',
+                    geometry: {
+                        type: 'Point',
+                        coordinates: [row.longitude, row.latitude]
+                    },
+                    properties: row
+                };
+            });
+            mediaData = { type: 'FeatureCollection', features: items };
+            // console.log(mediaData);
+            map.getSource('media').setData(mediaData);
+        });
+        req.open("GET", SHEET_URL);
+        req.send();
+
+        jQuery(document).ready(function() {
+            // console.log( "ready!" );
+            // Set date range max
+            function setMaxDate() {
+                var date = new Date();  //it returns the date
+                var month = date.getMonth();
+                // console.log('month = ' + month);
+                var year = date.getFullYear();
+                // console.log('year = ' + year);
+                $('#end_month_select').val(month).change();
+                $('#end_year_select').val(year).change();
+            }
+            setMaxDate();
+
+            // Set up button to display filter(switch)
+            $('#filters_button').click(function(e) {
+                if ($('#filters-parent').length >= 1) {
+                    $('#filters-parent').toggleClass('show');
+                }
+            });
+
+            $('#filter_bydate').click(function(e) {
+                // Set filter range from form elements.
+                var start = new Date(
+                    $('#start_year_select').val(),
+                    $('#start_month_select').val()
+                );
+                // console.log(start);
+                filter_start_date = start;
+                // End, have to take the last day of the month,
+                // which we will get by stepping back from the subsequent month.
+                var month = Number($('#end_month_select').val());
+                var year = Number($('#end_year_select').val());
+                if (month === 11) {
+                    month = 0;
+                    year = year + 1;
+                } else {
+                    month = month + 1;
+                }
+                var end = new Date(year, month, 0);
+                // console.log(end);
+                filter_end_date = end;
+                var newData = { type: 'FeatureCollection',
+                    features: (mediaData.features).filter(function(obj) {
+                        var pubDate = new Date(obj.properties.date);
+                        return (pubDate >=  filter_start_date) && (pubDate <= filter_end_date);
+                    })
+                };
+                // console.log(newData);
+                // Reload the map.
+                map.getSource('media').setData(newData);
+            });
+
+            /**
+             * Validate the end range, removing months beyond the current
+             * month if the selected year is the current year.
+             * @return null
+             */
+            function validateEndRange(el) {
+                // console.log('validateEndRange');
+                // Get element and sibling
+                var $el = $(el);
+                var $month = $el.prev('.month');
+                // Get current datetime
+                var now = new Date();
+                var thisMonth = now.getMonth();
+                var thisYear = now.getFullYear();
+                // Minimal max month validation against current year
+                if ($el.val() == thisYear) {
+                    // console.log('this year is selected');
+                    $month.find('option').each(function() {
+                        if (Number(this.value) > thisMonth) {
+                            // console.log('number is greater than present month');
+                            $(this).attr('disabled', 'disabled');
+                        } else {
+                            $(this).removeAttr('disabled');
+                            $month.val(thisMonth);
+                        }
+                    });
+                } else {
+                    $month.find('option').each(function() {
+                        $(this).removeAttr('disabled');
+                    });
+                }
+            }
+            $('#end_year_select, #start_year_select').on('change', function(e) {
+                validateEndRange(e.target);
+            });
+            validateEndRange('#end_year_select');
+            /**
+             * Validate full date range, ensuring that end date selections
+             * are after selected start date.
+             * @return null
+             */
+            function validateFullDateRange() {
+                // console.log('validateFullDateRange()');
+                var start_month = Number($('#start_month_select').val());
+                var start_year = Number($('#start_year_select').val());
+                var end_month = Number($('#end_month_select').val());
+                var end_year = Number($('#end_year_select').val());
+
+                if (end_year === start_year) {
+                    // console.log('End year equal to start year');
+                    // When end year same as start year,
+                    // if end month less than start month,
+                    // validation error. Else proceed.
+                    if (end_month < start_month) {
+                        // console.log('invalid, disabling');
+                        // Disable filter button
+                        $('#filter_bydate').prop('disabled', 'disabled').text('Invalid date selection');
+                        // Add invalid classes
+                        $('#end_year_select, #end_month_select').addClass('select-invalid');
+                    } else {
+                        // console.log('valid, enabling');
+                        // Enable filter button
+                        $('#filter_bydate').prop('disabled', false).text('Go');
+                        // Add invalid classes
+                        $('#end_year_select, #end_month_select').removeClass('select-invalid');
+                    }
+                } else if (end_year < start_year) {
+                    // When end year less than start year,
+                    // validation error.
+                    // console.log('End year less than start year');
+                    // Disable filter button
+                    $('#filter_bydate').prop('disabled', 'disabled').text('Invalid date selection');
+                    // Add invalid classes
+                    $('#end_year_select, #end_month_select').addClass('select-invalid');
+                } else {
+                    // Else remove any preceding validation
+                    // error warnings.
+                    // console.log('valid, enabling');
+                    // Enable filter button
+                    $('#filter_bydate').prop('disabled', false).text('Go');
+                    // Add invalid classes
+                    $('#end_year_select, #end_month_select').removeClass('select-invalid');
+                }
+            }
+            $('#start_month_select, #start_year_select, #end_month_select, #end_year_select').on('change', function() {
+                validateFullDateRange();
+            });
+            validateEndRange();
+        });
+    </script>
+</body>
+</html>

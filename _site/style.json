@@ -1,0 +1,497 @@
+{
+  "version": 8,
+  "id": "eviction-lab-media",
+  "name": "Eviction Lab Media Map",
+  "sprite": "https://tiles.evictionlab.org/sprites",
+  "sources": {
+    "composite": {
+      "url": "mapbox://mapbox.mapbox-streets-v7",
+      "type": "vector"
+    },
+    "us-cities-10": {
+      "type": "vector",
+      "maxzoom": 10,
+      "tiles": [
+        "https://tiles.evictionlab.org/evictions-cities-10/{z}/{x}/{y}.pbf"
+      ],
+      "attribution": ""
+    },
+    "us-states-10": {
+      "type": "vector",
+      "maxzoom": 10,
+      "tiles": [
+        "https://tiles.evictionlab.org/evictions-states-10/{z}/{x}/{y}.pbf"
+      ],
+      "attribution": ""
+    },
+    "media": {
+        "type": "geojson",
+        "data": {
+            "type" : "FeatureCollection",
+            "features": []
+        },
+        "cluster": true,
+        "clusterMaxZoom": 14,
+        "clusterRadius": 35
+    }
+  },
+  "glyphs": "https://openmaptiles.evictionlab.org/fonts/{fontstack}/{range}.pbf",
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "minzoom": 1,
+      "paint": {
+        "background-color": "#f8f8f9"
+      }
+    },
+    {
+      "id": "water",
+      "type": "fill",
+      "source": "composite",
+      "source-layer": "water",
+      "filter": [
+        "==",
+        "$type",
+        "Polygon"
+      ],
+      "layout": {
+        "visibility": "visible"
+      },
+      "paint": {
+        "fill-color": "#ececef",
+        "fill-outline-color": "#e3e3e7"
+      }
+    },
+    {
+      "id": "roads",
+      "type": "line",
+      "source": "composite",
+      "source-layer": "road",
+      "minzoom": 10,
+      "filter": [
+        "all",
+        [
+          "==",
+          "$type",
+          "LineString"
+        ],
+        [
+          "in",
+          "class",
+          "primary",
+          "secondary",
+          "tertiary",
+          "trunk"
+        ]
+      ],
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "rgba(150,150,150,1)",
+        "line-width": { "stops": [ [10, 0 ], [ 13, 1 ], [ 14, 2 ] ] },
+        "line-opacity": { "stops": [ [10, 0 ], [ 14, 1 ] ] }
+      }
+    },
+    {
+      "id": "highways",
+      "type": "line",
+      "source": "composite",
+      "source-layer": "road",
+      "minzoom": 7,
+      "filter": [
+        "all",
+        [
+          "==",
+          "$type",
+          "LineString"
+        ],
+        [
+          "all",
+          [
+            "==",
+            "class",
+            "motorway"
+          ]
+        ]
+      ],
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round",
+        "visibility": "visible"
+      },
+      "paint": {
+        "line-color": "rgba(150,150,150,1)",
+        "line-width": { 
+          "stops": [ [10, 0 ], [ 12, 1 ], [ 14, 3 ] ] 
+        },
+        "line-opacity": { 
+          "stops": [ [10, 0 ], [ 12, 1 ], [ 14, 1 ] ] 
+        }
+      }
+    },
+    {
+      "id": "boundary_state",
+      "type": "line",
+      "source": "us-states-10",
+      "source-layer": "states",
+      "layout": {
+        "line-cap": "round",
+        "line-join": "bevel",
+        "visibility": "visible"
+      },
+      "paint": {
+        "line-color": "rgba(248, 153, 156, 1)",
+        "line-width": {
+          "stops": [
+            [
+              3,
+              1
+            ],
+            [
+              7,
+              2
+            ]
+          ]
+        },
+        "line-blur": 0.4,
+        "line-opacity": 0.8
+      }
+    },
+    {
+      "id": "roads-highways_text",
+      "type": "symbol",
+      "source": "composite",
+      "source-layer": "road_label",
+      "minzoom": 11,
+      "filter": [
+        "in",
+        "class",
+        "motorway",
+        "primary",
+        "secondary",
+        "tertiary",
+        "trunk"
+      ],
+      "layout": {
+        "text-size": 13,
+        "text-max-angle": 45,
+        "text-transform": "none",
+        "symbol-spacing": 250,
+        "text-font": [
+          "Lato+Bold"
+        ],
+        "symbol-placement": "line",
+        "text-rotation-alignment": "map",
+        "text-pitch-alignment": "viewport",
+        "text-field": "{name}",
+        "text-letter-spacing": 0.05,
+        "text-keep-upright": true
+      },
+      "paint": {
+        "text-color": "rgba(5, 4, 3, 1)",
+        "text-halo-color": "rgba(255,255,255,1)",
+        "text-translate": [
+          0,
+          0
+        ],
+        "text-halo-width": 2,
+        "text-halo-blur": 1
+      }
+    },
+    {
+        "id": "clusters",
+        "type": "circle",
+        "source": "media",
+        "paint": {
+            "circle-color": [
+                "interpolate", ["linear"], ["case", ["has", "point_count"], ["get", "point_count"], 1],
+                1, "rgba(133, 157, 204, 0.8)",
+                15, "rgba(64, 71, 124, 0.9)"
+            ],
+            "circle-radius": [
+                "interpolate", ["linear"], ["case", ["has", "point_count"], ["get", "point_count"], 1],
+                1, 5,
+                2, 10,
+                20, 50
+            ],
+            "circle-stroke-width": 1,
+            "circle-stroke-color": "#fff"
+        }
+    },
+    {
+        "id": "cluster_count",
+        "type": "symbol",
+        "source": "media",
+        "filter": ["has", "point_count"],
+        "layout": {
+            "text-field": "{point_count_abbreviated}",
+            "text-font": ["Lato+Bold"],
+            "text-size": 11
+        },
+        "paint": {
+          "text-color": "rgb(255,255,255)"
+        }
+    },
+    {
+      "id": "city_extra_small_labels",
+      "type": "symbol",
+      "source": "us-cities-10",
+      "source-layer": "cities-centers",
+      "minzoom": 10,
+      "filter": [
+        "all",
+        [">=", "p-10", 50000],
+        ["<", "p-10", 75000]
+      ],
+      "layout": {
+        "text-size": {
+          "stops": [
+            [
+              10,
+              10
+            ],
+            [
+              12,
+              14
+            ]
+          ]
+        },
+        "text-transform": "uppercase",
+        "text-font": [
+          "Lato+Bold"
+        ],
+        "text-justify": "left",
+        "text-offset": [-2, -1],
+        "text-anchor": "left",
+        "text-field": "{n}",
+        "text-padding": 0.5,
+        "text-letter-spacing": 0.13
+      },
+      "paint": {
+        "text-color": "rgba(102, 102, 102, 1)",
+        "text-halo-color": "rgba(255, 255, 255, 1)",
+        "text-halo-width": {
+          "stops": [
+            [
+              1,
+              2
+            ],
+            [
+              11,
+              3
+            ]
+          ]
+        },
+        "text-halo-blur": 1,
+        "text-opacity": 1
+      }
+    },
+    {
+      "id": "city_small_labels",
+      "type": "symbol",
+      "source": "us-cities-10",
+      "source-layer": "cities-centers",
+      "minzoom": 8,
+      "filter": [
+        "all",
+        [">=", "p-10", 75000],
+        ["<", "p-10", 100000]
+      ],
+      "layout": {
+        "text-size": {
+          "stops": [
+            [
+              6,
+              12
+            ],
+            [
+              10,
+              16
+            ]
+          ]
+        },
+        "text-transform": "uppercase",
+        "text-font": [
+          "Lato+Bold"
+        ],
+        "text-justify": "left",
+        "text-field": "{n}",
+        "text-letter-spacing": {
+          "stops": [
+            [
+              6,
+              0.12
+            ],
+            [
+              10,
+              0.12
+            ]
+          ]
+        },
+        "text-padding": 2,
+        "text-offset": [
+          "interpolate", ["linear"], ["zoom"],
+          6, ["literal", [-1, -0.5]],
+          12, ["literal", [-2, -1]]
+        ]
+      },
+      "paint": {
+        "text-color": "rgba(102, 102, 102, 1)",
+        "text-halo-color": "rgba(255, 255, 255, 1)",
+        "text-halo-width": {
+          "stops": [
+            [
+              6,
+              1
+            ],
+            [
+              10,
+              2
+            ]
+          ]
+        },
+        "text-halo-blur": 1,
+        "icon-opacity": 0,
+        "text-opacity": 1
+      }
+    },
+    {
+      "id": "city_mid_labels",
+      "type": "symbol",
+      "source": "us-cities-10",
+      "source-layer": "cities-centers",
+      "minzoom": 6,
+      "maxzoom": 14,
+      "filter": [
+        "all",
+        [">=", "p-10", 100000],
+        ["<", "p-10", 500000]
+      ],
+      "layout": {
+        "text-size": {
+          "stops": [
+            [
+              5,
+              12
+            ],
+            [
+              10,
+              15
+            ]
+          ]
+        },
+        "text-transform": "uppercase",
+        "text-font": [
+          "Lato+Bold"
+        ],
+        "text-justify": "center",
+        "text-anchor": "center",
+        "text-field": "{n}",
+        "text-padding": 0,
+        "text-letter-spacing": 0.12,
+        "icon-allow-overlap": true,
+        "icon-ignore-placement": true,
+        "text-offset": [
+          "interpolate", ["linear"], ["zoom"],
+          6, ["literal", [-1, -0.5]],
+          10, ["literal", [-2, -1]]
+        ]
+      },
+      "paint": {
+        "text-color": {
+          "stops": [
+            [
+              5,
+              "rgba(5, 4, 3, 1)"
+            ],
+            [
+              10,
+              "rgba(102, 102, 102, 1)"
+            ]
+          ]
+        },
+        "text-halo-color": "rgba(255, 255, 255, 1)",
+        "text-halo-width": {
+          "stops": [
+            [
+              5,
+              2
+            ],
+            [
+              6,
+              2
+            ]
+          ]
+        },
+        "text-halo-blur": 1,
+        "icon-opacity": 1,
+        "icon-color": "rgba(0, 0, 0, 1)"
+      }
+    },
+    {
+      "id": "city_large_labels",
+      "type": "symbol",
+      "source": "us-cities-10",
+      "source-layer": "cities-centers",
+      "minzoom": 6,
+      "maxzoom": 14,
+      "filter": [
+        ">=",
+        "p-10",
+        500000
+      ],
+      "layout": {
+        "text-size": {
+          "stops": [
+            [
+              6,
+              14
+            ],
+            [
+              10,
+              20
+            ]
+          ]
+        },
+        "text-transform": "uppercase",
+        "text-font": [
+          "Lato+Bold"
+        ],
+        "text-justify": "center",
+        "text-anchor": "center",
+        "text-field": "{n}",
+        "text-padding": 0,
+        "text-letter-spacing": 0.12,
+        "icon-allow-overlap": true,
+        "icon-ignore-placement": true,
+        "text-offset": [
+          "interpolate", ["linear"], ["zoom"],
+          6, ["literal", [-1, -0.5]],
+          10, ["literal", [-2, -1]]
+        ]
+      },
+      "paint": {
+        "text-color": "rgba(5, 4, 3, 1)",
+        "text-halo-color": "rgba(255, 255, 255, 1)",
+        "text-halo-width": {
+          "stops": [
+            [
+              5,
+              2
+            ],
+            [
+              6,
+              2
+            ]
+          ]
+        },
+        "text-halo-blur": 1,
+        "icon-opacity": 1,
+        "icon-color": "rgba(0, 0, 0, 1)"
+      }
+    }
+  ]
+}
