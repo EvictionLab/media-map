@@ -115,14 +115,14 @@ function featuresOnClick(e) {
 map.on('click', 'clusters', featuresOnClick);
 map.on('click', 'lmsclusters', featuresOnClick);
 
-var showMediaAndHideLMS = function() {
-    map.getSource('media').setData(mediaData);
+var showMediaAndHideLMS = function(data) {
+    map.getSource('media').setData(data);
     map.getSource('lmsmedia').setData({ type: 'FeatureCollection', features: [] });
 }
 
-var showLMSAndHideMedia = function() {
+var showLMSAndHideMedia = function(data) {
     map.getSource('media').setData({ type: 'FeatureCollection', features: [] });
-    map.getSource('lmsmedia').setData(lmsmediaData);
+    map.getSource('lmsmedia').setData(data);
 }
 
 let reqHandler = function(source, req) {
@@ -159,9 +159,9 @@ let reqHandler = function(source, req) {
     }
     // only display one set of data, depending on value of dataShowing variable
     if (dataShowing === 'media') {
-        showMediaAndHideLMS();
+        showMediaAndHideLMS(mediaData);
     } else if (dataShowing === 'lmsmedia') {
-        showLMSAndHideMedia();
+        showLMSAndHideMedia(lmsmediaData);
     }
 }
 
@@ -183,10 +183,10 @@ jQuery(document).ready(function() {
     $('#toggle-data').click(function(e) {
         dataShowing = (dataShowing === 'media') ? 'lmsmedia' : 'media';
         if (dataShowing === 'media') {
-             showMediaAndHideLMS();
+             showMediaAndHideLMS(mediaData);
              $('.switch-toggle').removeClass('on');
         } else if (dataShowing === 'lmsmedia') {
-            showLMSAndHideMedia();
+            showLMSAndHideMedia(lmsmediaData);
             $('.switch-toggle').addClass('on');
         }
     })
@@ -247,8 +247,14 @@ jQuery(document).ready(function() {
             })
         };
         // Reload the map.
-        map.getSource('media').setData(newMediaData);
-        map.getSource('lmsmedia').setData(newlmsMediaData);
+        // map.getSource('media').setData(newMediaData);
+        // map.getSource('lmsmedia').setData(newlmsMediaData);
+        // only display one set of data, depending on value of dataShowing variable
+        if (dataShowing === 'media') {
+            showMediaAndHideLMS(newMediaData);
+        } else if (dataShowing === 'lmsmedia') {
+            showLMSAndHideMedia(newlmsMediaData);
+        }
     });
 
     /**
