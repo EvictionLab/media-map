@@ -252,8 +252,8 @@
         "paint": {
             "circle-color": [
                 "interpolate", ["linear"], ["case", ["has", "point_count"], ["get", "point_count"], 1],
-                1, "rgba(129,210,151,0.71)",
-                15, "rgba(129,210,151,0.71)"
+                1, "rgba(63,174,162,0.80)",
+                15, "rgba(46,160,148,0.80)"
             ],
             "circle-radius": [
                 "interpolate", ["linear"], ["case", ["has", "point_count"], ["get", "point_count"], 1],
@@ -262,7 +262,7 @@
                 20, 50
             ],
             "circle-stroke-width": 1,
-            "circle-stroke-color": "#56C38C"
+            "circle-stroke-color": "#fff"
         }
     },
     {
