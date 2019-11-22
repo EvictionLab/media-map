@@ -34,7 +34,7 @@
         "clusterMaxZoom": 14,
         "clusterRadius": 35
     },
-    "lmsmedia": {
+    "lms": {
         "type": "geojson",
         "data": {
             "type" : "FeatureCollection",
@@ -246,9 +246,9 @@
         }
     },
     {
-        "id": "lmsclusters",
+        "id": "lms_clusters",
         "type": "circle",
-        "source": "lmsmedia",
+        "source": "lms",
         "paint": {
             "circle-color": [
                 "interpolate", ["linear"], ["case", ["has", "point_count"], ["get", "point_count"], 1],
@@ -266,9 +266,9 @@
         }
     },
     {
-        "id": "lmscluster_count",
+        "id": "lms_cluster_count",
         "type": "symbol",
-        "source": "lmsmedia",
+        "source": "lms",
         "filter": ["has", "point_count"],
         "layout": {
             "text-field": "{point_count_abbreviated}",
