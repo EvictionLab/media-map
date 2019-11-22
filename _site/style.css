@@ -42,6 +42,7 @@ body { margin:0; padding:0; min-height: 500px; }
     overflow-y: scroll;
     margin-bottom: 0;
     padding: 24px;
+    padding-top: 32px;
 }
 .mapboxgl-popup-close-button.close {
     padding-top: 8px;
