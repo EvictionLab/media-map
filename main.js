@@ -25,8 +25,15 @@ var pymChild = new pym.Child();
 var filter_start_date = null;
 var filter_end_date = null;
 
+// the mediaData variables contain the complete set of data returned from gSheets
 var mediaData = { type: 'FeatureCollection', features: [] };
 var lmsmediaData = { type: 'FeatureCollection', features: [] };
+
+// the filtered mediaData variables reflect the data corresponding to
+// the most recent date filters set by user
+var filteredMediaData = { type: 'FeatureCollection', features: [] };
+var filteredLmsMediaData = { type: 'FeatureCollection', features: [] };
+
 // variable controlling which data--LMS Data or Media Articles--are displayed
 var dataShowing = 'media';
 
@@ -154,8 +161,10 @@ let reqHandler = function(source, req) {
     // add fetched items into either the media or lmsmedia object
     if (source === 'media') {
         mediaData = { type: 'FeatureCollection', features: items };
+        filteredMediaData = { type: 'FeatureCollection', features: items };
     } else {
         lmsmediaData = { type: 'FeatureCollection', features: items };
+        filteredLmsMediaData = { type: 'FeatureCollection', features: items };
     }
     // only display one set of data, depending on value of dataShowing variable
     if (dataShowing === 'media') {
@@ -183,10 +192,10 @@ jQuery(document).ready(function() {
     $('#toggle-data').click(function(e) {
         dataShowing = (dataShowing === 'media') ? 'lmsmedia' : 'media';
         if (dataShowing === 'media') {
-             showMediaAndHideLMS(mediaData);
+             showMediaAndHideLMS(filteredMediaData);
              $('.switch-toggle').removeClass('on');
         } else if (dataShowing === 'lmsmedia') {
-            showLMSAndHideMedia(lmsmediaData);
+            showLMSAndHideMedia(filteredLmsMediaData);
             $('.switch-toggle').addClass('on');
         }
     })
@@ -220,14 +229,14 @@ jQuery(document).ready(function() {
         }
         var end = new Date(year, month, 0);
         filter_end_date = end;
-        var newMediaData = {
+        filteredMediaData = {
             type: 'FeatureCollection',
             features: (mediaData.features).filter(function(obj) {
                 var pubDate = new Date(obj.properties.date);
                 return (pubDate >=  filter_start_date) && (pubDate <= filter_end_date);
             })
         };
-        var newlmsMediaData = { type: 'FeatureCollection',
+        filteredLmsMediaData = { type: 'FeatureCollection',
             features: (lmsmediaData.features).filter(function(obj) {
                 let withinDateBounds = false
                 let pubDateList = Object.keys(obj.properties).map(function(p) {
@@ -247,13 +256,10 @@ jQuery(document).ready(function() {
             })
         };
         // Reload the map.
-        // map.getSource('media').setData(newMediaData);
-        // map.getSource('lmsmedia').setData(newlmsMediaData);
-        // only display one set of data, depending on value of dataShowing variable
         if (dataShowing === 'media') {
-            showMediaAndHideLMS(newMediaData);
+            showMediaAndHideLMS(filteredMediaData);
         } else if (dataShowing === 'lmsmedia') {
-            showLMSAndHideMedia(newlmsMediaData);
+            showLMSAndHideMedia(filteredLmsMediaData);
         }
     });
 
