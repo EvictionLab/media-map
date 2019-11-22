@@ -27,12 +27,12 @@ var filter_end_date = null;
 
 // the mediaData variables contain the complete set of data returned from gSheets
 var mediaData = { type: 'FeatureCollection', features: [] };
-var lmsmediaData = { type: 'FeatureCollection', features: [] };
+var lmsData = { type: 'FeatureCollection', features: [] };
 
 // the filtered mediaData variables reflect the data corresponding to
 // the most recent date filters set by user
 var filteredMediaData = { type: 'FeatureCollection', features: [] };
-var filteredLmsMediaData = { type: 'FeatureCollection', features: [] };
+var filteredLmsData = { type: 'FeatureCollection', features: [] };
 
 // variable controlling which data--LMS Data or Media Articles--are displayed
 var dataShowing = 'media';
@@ -47,10 +47,10 @@ map.on('mouseenter', 'clusters', function() {
 map.on('mouseleave', 'clusters', function() {
     map.getCanvas().style.cursor = '';
 });
-map.on('mouseenter', 'lmsclusters', function() {
+map.on('mouseenter', 'lms_clusters', function() {
     map.getCanvas().style.cursor = 'pointer';
 });
-map.on('mouseleave', 'lmsclusters', function() {
+map.on('mouseleave', 'lms_clusters', function() {
     map.getCanvas().style.cursor = '';
 });
 
@@ -100,8 +100,8 @@ function featuresOnClick(e) {
     var bbox = [sw.lng, sw.lat, ne.lng, ne.lat];
 
     var index = supercluster({ radius: r, maxZoom: 14 });
-    if (e.features[0].layer.id === 'lmsclusters') {
-        index.load(map.getSource('lmsmedia').serialize().data.features);
+    if (e.features[0].layer.id === 'lms_clusters') {
+        index.load(map.getSource('lms').serialize().data.features);
     } else {
         index.load(map.getSource('media').serialize().data.features);
     }
@@ -120,16 +120,16 @@ function featuresOnClick(e) {
     }
 }
 map.on('click', 'clusters', featuresOnClick);
-map.on('click', 'lmsclusters', featuresOnClick);
+map.on('click', 'lms_clusters', featuresOnClick);
 
-var showMediaAndHideLMS = function(data) {
+var showMediaAndHideLms = function(data) {
     map.getSource('media').setData(data);
-    map.getSource('lmsmedia').setData({ type: 'FeatureCollection', features: [] });
+    map.getSource('lms').setData({ type: 'FeatureCollection', features: [] });
 }
 
-var showLMSAndHideMedia = function(data) {
+var showLmsAndHideMedia = function(data) {
     map.getSource('media').setData({ type: 'FeatureCollection', features: [] });
-    map.getSource('lmsmedia').setData(data);
+    map.getSource('lms').setData(data);
 }
 
 let reqHandler = function(source, req) {
@@ -158,44 +158,44 @@ let reqHandler = function(source, req) {
             properties: row
         };
     });
-    // add fetched items into either the media or lmsmedia object
+    // add fetched items into either the mediaData or lmsData object
     if (source === 'media') {
         mediaData = { type: 'FeatureCollection', features: items };
         filteredMediaData = { type: 'FeatureCollection', features: items };
     } else {
-        lmsmediaData = { type: 'FeatureCollection', features: items };
-        filteredLmsMediaData = { type: 'FeatureCollection', features: items };
+        lmsData = { type: 'FeatureCollection', features: items };
+        filteredLmsData = { type: 'FeatureCollection', features: items };
     }
     // only display one set of data, depending on value of dataShowing variable
     if (dataShowing === 'media') {
-        showMediaAndHideLMS(mediaData);
-    } else if (dataShowing === 'lmsmedia') {
-        showLMSAndHideMedia(lmsmediaData);
+        showMediaAndHideLms(mediaData);
+    } else if (dataShowing === 'lms') {
+        showLmsAndHideMedia(lmsData);
     }
 }
 
 // Fetch Local Article Data
-var req = new XMLHttpRequest();
-req.addEventListener("load",  function() { reqHandler('media', req) });
-req.open("GET", SHEET_URL);
-req.send();
+var mediaReq = new XMLHttpRequest();
+mediaReq.addEventListener("load",  function() { reqHandler('media', mediaReq) });
+mediaReq.open("GET", SHEET_URL);
+mediaReq.send();
 
 // Fetch LMS Data
-var lmsreq = new XMLHttpRequest();
-lmsreq.addEventListener("load", function() { reqHandler('lmsmedia', lmsreq) });
-lmsreq.open("GET", LMS_SHEET_URL);
-lmsreq.send();
+var lmsReq = new XMLHttpRequest();
+lmsReq.addEventListener("load", function() { reqHandler('lms', lmsReq) });
+lmsReq.open("GET", LMS_SHEET_URL);
+lmsReq.send();
 
 jQuery(document).ready(function() {
 
     // toggle which data -- LMS or media articles -- is showing on map
     $('#toggle-data').click(function(e) {
-        dataShowing = (dataShowing === 'media') ? 'lmsmedia' : 'media';
+        dataShowing = (dataShowing === 'media') ? 'lms' : 'media';
         if (dataShowing === 'media') {
-             showMediaAndHideLMS(filteredMediaData);
+             showMediaAndHideLms(filteredMediaData);
              $('.switch-toggle').removeClass('on');
-        } else if (dataShowing === 'lmsmedia') {
-            showLMSAndHideMedia(filteredLmsMediaData);
+        } else if (dataShowing === 'lms') {
+            showLmsAndHideMedia(filteredLmsData);
             $('.switch-toggle').addClass('on');
         }
     })
@@ -236,8 +236,8 @@ jQuery(document).ready(function() {
                 return (pubDate >=  filter_start_date) && (pubDate <= filter_end_date);
             })
         };
-        filteredLmsMediaData = { type: 'FeatureCollection',
-            features: (lmsmediaData.features).filter(function(obj) {
+        filteredLmsData = { type: 'FeatureCollection',
+            features: (lmsData.features).filter(function(obj) {
                 let withinDateBounds = false
                 let pubDateList = Object.keys(obj.properties).map(function(p) {
                       if (p.slice(0,4) === 'date' && obj.properties[p]) {
@@ -257,9 +257,9 @@ jQuery(document).ready(function() {
         };
         // Reload the map.
         if (dataShowing === 'media') {
-            showMediaAndHideLMS(filteredMediaData);
-        } else if (dataShowing === 'lmsmedia') {
-            showLMSAndHideMedia(filteredLmsMediaData);
+            showMediaAndHideLms(filteredMediaData);
+        } else if (dataShowing === 'lms') {
+            showLmsAndHideMedia(filteredLmsData);
         }
     });
 
