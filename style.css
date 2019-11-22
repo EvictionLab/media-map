@@ -169,11 +169,13 @@ select {
     margin-top: 1rem;
     min-width: 250px;
     text-align: center;
+    cursor: pointer;
 }
 #filter_bydate:disabled {
     color: #909090 !important;
+    cursor: not-allowed;
 }
-@media (max-width: 991px) {
+@media (max-width: 768px) {
     .filters-parent {
         top: -200px;
     }
@@ -212,5 +214,10 @@ select {
     }
     .filters-parent .row .column.go-button {
         margin-top: .5rem;
+    }
+}
+@media (max-width: 991px) {
+    #filter_bydate {
+        min-width: 0;
     }
 }
