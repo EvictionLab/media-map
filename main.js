@@ -313,7 +313,7 @@ jQuery(document).ready(function() {
             // validation error. Else proceed.
             if (end_month < start_month) {
                 // Disable filter button
-                $('#filter_bydate').prop('disabled', 'disabled').text('Invalid date selection');
+                $('#filter_bydate').prop('disabled', 'disabled').text('Invalid');
                 // Add invalid classes
                 $('#end_year_select, #end_month_select').addClass('select-invalid');
             } else {
@@ -326,7 +326,7 @@ jQuery(document).ready(function() {
             // When end year less than start year,
             // validation error.
             // Disable filter button
-            $('#filter_bydate').prop('disabled', 'disabled').text('Invalid date selection');
+            $('#filter_bydate').prop('disabled', 'disabled').text('Invalid');
             // Add invalid classes
             $('#end_year_select, #end_month_select').addClass('select-invalid');
         } else {
