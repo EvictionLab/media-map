@@ -200,6 +200,15 @@ jQuery(document).ready(function() {
         }
     })
 
+    function createYears() {
+        var date = new Date();
+        var currentYear = date.getFullYear();
+        for(var i = 2018; i <= currentYear; i++) {
+            $('#end_year_select').append(`<option value="${i}">${i}</option>`);
+            $('#start_year_select').append(`<option value="${i}">${i}</option>`);
+        }
+    }
+
     // Set date range max
     function setMaxDate() {
         var date = new Date();  //it returns the date
@@ -208,6 +217,7 @@ jQuery(document).ready(function() {
         $('#end_month_select').val(month).change();
         $('#end_year_select').val(year).change();
     }
+    createYears();
     setMaxDate();
 
     $('#filter_bydate').click(function(e) {
